@@ -6,13 +6,16 @@ ini_set('display_errors', 1);
 
 class Application {
     protected $route;
+    public $prettyprint = false;
+    public $cache = null;
     public function __construct($srcPath)
     {
-        if (! isset($_SERVER['PATH_INFO'])){
+        $request =explode("?", $_SERVER['REQUEST_URI'], 2);
+        if ($request[0] == "/"){
             $this->route = '/';
         }
         else {
-            $this->route = ltrim($_SERVER['PATH_INFO'], '/');
+            $this->route = ltrim($request[0], '/');
         }
         spl_autoload_register(function($class) use($srcPath) {
             if (! strstr($class, 'Jade')) return;
@@ -21,10 +24,14 @@ class Application {
     }
     public function action($path, \Closure $callback)
     {
-        if ($path == $this->route) {
-            $jade = new Jade;
+        if ($path == $this->route || $path == '') {
+            $jade = new Jade([
+                'prettyprint' => $this->prettyprint,
+                'cache' => $this->cache
+            ]);
             $vars = $callback($path) ?: [];
             $jade->render($path. '.jade', $vars);
+            die;
         }
     }
 }

@@ -3,6 +3,16 @@
 require 'bootstrap.php';
 
 /**
+ * formatted output
+ */
+$app->prettyprint = true;
+
+/**
+ * for cache
+ */
+$app->cache = "cache"; //Specify the directory
+
+/**
  * Home pages list
  */
 $app->action('/', function(&$view)
@@ -56,3 +66,14 @@ $app->action('cities', function()
     return compact('cities', 'query');
 });
 
+/**
+ * Catch routing error
+ */
+$app->action('', function(&$view)
+{
+    header("Status: 404 Not Found");
+    $view  = 'error';
+    return array(
+        'message'=> 'Error: 404'
+    );
+});
