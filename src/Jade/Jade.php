@@ -152,6 +152,6 @@ class Jade {
         $rendered = $this->compile($input);
         file_put_contents($path, $rendered);
 
-        return $this->stream($rendered);
+        return $path;
     }
 }
