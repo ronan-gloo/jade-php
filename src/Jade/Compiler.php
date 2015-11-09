@@ -740,7 +740,7 @@ class Compiler
         $arguments  = $mixin->arguments;
         $block      = $mixin->block;
         $attributes = $mixin->attributes;
-
+        
         if ($mixin->call) {
 
             if (!count($attributes)) {
@@ -1037,6 +1037,7 @@ class Compiler
         foreach ($attributes as $attr) {
             $key = trim($attr['name']);
             $value = trim($attr['value']);
+            //$escaped = trim($attr['escaped']);
 
             if ($this->isConstant($value, $key == 'class')) {
                 $value = trim($value,' \'"');
@@ -1054,7 +1055,7 @@ class Compiler
 
                     if ($key == 'class') {
                         $value = $this->createCode('echo (is_array(%1$s)) ? implode(" ", %1$s) : %1$s', $value);
-                    } elseif (strpos($key, 'data-') !== false) {
+                    } elseif (strpos($key, 'data-') !== false && $attr['escaped']) { // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! sv
                         $value = $this->createCode('echo json_encode(%s)', $value);
                     } else {
                         $value = $this->createCode('echo %s', $value);
