@@ -3,8 +3,7 @@
 namespace Jade;
 
 /**
- * Class Lexer
- * @package Jade
+ * Class Jade\Lexer.
  */
 class Lexer
 {
@@ -12,10 +11,12 @@ class Lexer
      * @var int
      */
     public $lineno = 1;
+
     /**
      * @var
      */
     public $pipeless;
+
     /**
      * @var
      */
@@ -47,31 +48,31 @@ class Lexer
     /**
      * Set lexer input.
      *
-     * @param   string $input  input string
+     * @param string $input input string
      */
     public function setInput($input)
     {
-        $this->input       = preg_replace("/\r\n|\r/", "\n", $input);
-        $this->lineno      = 1;
-        $this->deferred    = array();
+        $this->input = preg_replace("/\r\n|\r/", "\n", $input);
+        $this->lineno = 1;
+        $this->deferred = array();
         $this->indentStack = array();
-        $this->stash       = array();
+        $this->stash = array();
     }
 
     /**
      * Construct token with specified parameters.
      *
-     * @param   string $type   token type
-     * @param   string $value  token value
+     * @param string $type  token type
+     * @param string $value token value
      *
-     * @return  Object          new token object
+     * @return object new token object
      */
     public function token($type, $value = null)
     {
-        return (Object) array(
-            'type' => $type
-        , 'line'   => $this->lineno
-        , 'value'  => $value
+        return (object) array(
+            'type' => $type,
+            'line'   => $this->lineno,
+            'value'  => $value,
         );
     }
 
@@ -86,7 +87,7 @@ class Lexer
     /**
      * Consume input.
      *
-     * @param   string $bytes utf8 string of input to consume
+     * @param string $bytes utf8 string of input to consume
      */
     protected function consume($bytes)
     {
@@ -102,11 +103,11 @@ class Lexer
     {
         // everzet's implementation used ':' at the end of the code line as in php's alternative syntax
         // this implementation tries to be compatible with both, js-jade and jade.php, so, remove the colon here
-        return $code = (substr($code, -1) == ':') ? substr($code, 0, -1) : $code;
+        return $code = (substr($code, -1) === ':' && substr($code, -2, 1) !== ':') ? substr($code, 0, -1) : $code;
     }
 
     /**
-     *  Helper to create tokens
+     *  Helper to create tokens.
      */
     protected function scan($regex, $type)
     {
@@ -120,7 +121,7 @@ class Lexer
     /**
      * Defer token.
      *
-     * @param   \stdClass $token  token to defer
+     * @param \stdClass $token token to defer
      */
     public function defer(\stdClass $token)
     {
@@ -130,9 +131,9 @@ class Lexer
     /**
      * Lookahead token 'n'.
      *
-     * @param   integer $number number of tokens to predict
+     * @param int $number number of tokens to predict
      *
-     * @return  Object              predicted token
+     * @return object predicted token
      */
     public function lookahead($number = 1)
     {
@@ -148,7 +149,7 @@ class Lexer
     /**
      * Return stashed token.
      *
-     * @return  Object|boolean   token if has stashed, false otherways
+     * @return object|bool token if has stashed, false otherways
      */
     protected function getStashed()
     {
@@ -158,7 +159,7 @@ class Lexer
     /**
      * Return deferred token.
      *
-     * @return  Object|boolean   token if has deferred, false otherways
+     * @return object|bool token if has deferred, false otherways
      */
     protected function deferred()
     {
@@ -168,7 +169,7 @@ class Lexer
     /**
      * Return next token or previously stashed one.
      *
-     * @return  Object
+     * @return object
      */
     public function advance()
     {
@@ -181,7 +182,7 @@ class Lexer
     /**
      * Return next token.
      *
-     * @return  Object
+     * @return object
      */
     protected function next()
     {
@@ -191,12 +192,11 @@ class Lexer
     /**
      * Scan EOS from input & return it if found.
      *
-     * @return  Object|null
+     * @return object|null
      */
     protected function scanEOS()
     {
         if (!$this->length()) {
-
             if (count($this->indentStack)) {
                 array_shift($this->indentStack);
 
@@ -208,11 +208,10 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanBlank()
     {
-
         if (preg_match('/^\n *\n/', $this->input, $matches)) {
             $this->consume(mb_substr($matches[0], 0, -1)); // do not cosume the last \r
             $this->lineno++;
@@ -228,13 +227,13 @@ class Lexer
     /**
      * Scan comment from input & return it if found.
      *
-     * @return  Object|null
+     * @return object|null
      */
     protected function scanComment()
     {
         if (preg_match('/^ *\/\/(-)?([^\n]*)/', $this->input, $matches)) {
             $this->consume($matches[0]);
-            $token         = $this->token('comment', isset($matches[2]) ? $matches[2] : '');
+            $token = $this->token('comment', isset($matches[2]) ? $matches[2] : '');
             $token->buffer = '-' !== $matches[1];
 
             return $token;
@@ -242,7 +241,7 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanInterpolation()
     {
@@ -250,7 +249,7 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanTag()
     {
@@ -258,33 +257,34 @@ class Lexer
             $this->consume($matches[0]);
             $name = $matches[1];
 
-            if (':' == mb_substr($name, -1)) {
-
-                $name  = mb_substr($name, 0, -1);
+            if (':' === mb_substr($name, -1) && ':' !== mb_substr($name, -2, 1)) {
+                $name = mb_substr($name, 0, -1);
                 $token = $this->token('tag', $name);
                 $this->defer($this->token(':'));
 
-                while (' ' == mb_substr($this->input, 0, 1)) $this->consume(mb_substr($this->input, 0, 1));
+                while (' ' === mb_substr($this->input, 0, 1)) {
+                    $this->consume(mb_substr($this->input, 0, 1));
+                }
             } else {
                 $token = $this->token('tag', $name);
             }
 
-            $token->selfClosing = ($matches[2] == '/') ? true : false;
+            $token->selfClosing = ($matches[2] === '/');
 
             return $token;
         }
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanFilter()
     {
-        return $this->scan('/^:(\w+)/', 'filter');
+        return $this->scan('/^(?<!:):(?!:)(\w+)/', 'filter');
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanDoctype()
     {
@@ -292,7 +292,7 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanId()
     {
@@ -300,31 +300,31 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanClassName()
     {
         // http://www.w3.org/TR/CSS21/grammar.html#scanner
         //
         // ident:
-        //		-?{nmstart}{nmchar}*
+        //      -?{nmstart}{nmchar}*
         // nmstart:
-        //		[_a-z]|{nonascii}|{escape}
+        //      [_a-z]|{nonascii}|{escape}
         // nonascii:
-        //		[\240-\377]
+        //      [\240-\377]
         // escape:
-        //		{unicode}|\\[^\r\n\f0-9a-f]
+        //      {unicode}|\\[^\r\n\f0-9a-f]
         // unicode:
-        //		\\{h}{1,6}(\r\n|[ \t\r\n\f])?
+        //      \\{h}{1,6}(\r\n|[ \t\r\n\f])?
         // nmchar:
-        //		[_a-z0-9-]|{nonascii}|{escape}
+        //      [_a-z0-9-]|{nonascii}|{escape}
         //
         // /^(-?(?!=[0-9-])(?:[_a-z0-9-]|[\240-\377]|\\{h}{1,6}(?:\r\n|[ \t\r\n\f])?|\\[^\r\n\f0-9a-f])+)/
         return $this->scan('/^[.]([\w-]+)/', 'class');
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanText()
     {
@@ -332,7 +332,7 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanExtends()
     {
@@ -340,13 +340,13 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanPrepend()
     {
         if (preg_match('/^prepend +([^\n]+)/', $this->input, $matches)) {
             $this->consume($matches[0]);
-            $token       = $this->token('block', $matches[1]);
+            $token = $this->token('block', $matches[1]);
             $token->mode = 'prepend';
 
             return $token;
@@ -354,13 +354,13 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanAppend()
     {
         if (preg_match('/^append +([^\n]+)/', $this->input, $matches)) {
             $this->consume($matches[0]);
-            $token       = $this->token('block', $matches[1]);
+            $token = $this->token('block', $matches[1]);
             $token->mode = 'append';
 
             return $token;
@@ -368,13 +368,13 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanBlock()
     {
         if (preg_match("/^block\b *(?:(prepend|append) +)?([^\n]*)/", $this->input, $matches)) {
             $this->consume($matches[0]);
-            $token       = $this->token('block', $matches[2]);
+            $token = $this->token('block', $matches[2]);
             $token->mode = (mb_strlen($matches[1]) == 0) ? 'replace' : $matches[1];
 
             return $token;
@@ -382,7 +382,7 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanYield()
     {
@@ -390,7 +390,7 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanInclude()
     {
@@ -398,7 +398,7 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanCase()
     {
@@ -406,15 +406,15 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanWhen()
     {
-        return $this->scan('/^when +([^:\n]+)/', 'when');
+        return $this->scan('/^when +((::|[^\n:]+)+)/', 'when');
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanDefault()
     {
@@ -422,27 +422,28 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanAssignment()
     {
-        if (preg_match('/^(\w+) += *(\'[^\']+\'|"[^"]+"|[^;\n]+)( *;? *)/', $this->input, $matches)) {
+        if (preg_match('/^(\$?\w+) += *([^;\n]+|\'[^\']+\'|"[^"]+")( *;? *)/', $this->input, $matches)) {
             $this->consume($matches[0]);
 
-            return $this->token('code', $matches[1] . ' = ' . $matches[2]);
+            return $this->token('code', (substr($matches[1], 0, 1) === '$' ? '' : '$') . $matches[1] . ' = ' . $matches[2]);
         }
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanCall()
     {
-        if (preg_match('/^\+([-\w]+)/', $this->input, $matches)) {
+        if (preg_match('/^\+(\w[-\w]*)/', $this->input, $matches)) {
+            static $i = 0;
             $this->consume($matches[0]);
             $token = $this->token('call', $matches[1]);
 
-            # check for arguments
+            // check for arguments
             if (preg_match('/^ *\((.*?)\)/', $this->input, $matches_arguments)) {
                 $this->consume($matches_arguments[0]);
                 $token->arguments = $matches_arguments[1];
@@ -453,13 +454,13 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanMixin()
     {
-        if (preg_match('/^mixin +([-\w]+)(?: *\((.*)\))?/', $this->input, $matches)) {
+        if (preg_match('/^mixin +(\w[-\w]*)(?: *\((.*)\))?/', $this->input, $matches)) {
             $this->consume($matches[0]);
-            $token            = $this->token('mixin', $matches[1]);
+            $token = $this->token('mixin', $matches[1]);
             $token->arguments = isset($matches[2]) ? $matches[2] : null;
 
             return $token;
@@ -467,11 +468,11 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanConditional()
     {
-        if (preg_match('/^(if|unless|else if|else)\b([^\n]*)/', $this->input, $matches)) {
+        if (preg_match('/^(if|unless|else if|elseif|else|while)\b([^\n]*)/', $this->input, $matches)) {
             $this->consume($matches[0]);
 
             /*switch ($matches[1]) {
@@ -480,8 +481,8 @@ class Lexer
                 case 'else if': $code = 'elseif (' . $matches[2] . '):'; break;
                 case 'else': $code = 'else (' . $matches[2] . '):'; break;
             }*/
-            $code          = $this->normalizeCode($matches[0]);
-            $token         = $this->token('code', $code);
+            $code = $this->normalizeCode($matches[0]);
+            $token = $this->token('code', $code);
             $token->buffer = false;
 
             return $token;
@@ -489,27 +490,15 @@ class Lexer
     }
 
     /**
-     *
-     */
-    protected function scanWhile()
-    {
-        if (preg_match('/^while +([^\n]+)/', $this->input, $matches)) {
-            $this->consume($matches[0]);
-            $this->token('code', 'while (' . $matches[1] . '):');
-        }
-    }
-
-    /**
-     * @return Object
+     * @return object
      */
     protected function scanEach()
     {
         if (preg_match('/^(?:- *)?(?:each|for) +(\w+)(?: *, *(\w+))? +in *([^\n]+)/', $this->input, $matches)) {
-
             $this->consume($matches[0]);
 
-            $token       = $this->token('each', $matches[1]);
-            $token->key  = $matches[2];
+            $token = $this->token('each', $matches[1]);
+            $token->key = $matches[2];
             $token->code = $this->normalizeCode($matches[3]);
 
             return $token;
@@ -517,17 +506,16 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanCode()
     {
         if (preg_match('/^(!?=|-)([^\n]+)/', $this->input, $matches)) {
-
             $this->consume($matches[0]);
             $flags = $matches[1];
-            $code  = $this->normalizeCode($matches[2]);
+            $code = $this->normalizeCode($matches[2]);
 
-            $token         = $this->token('code', $code);
+            $token = $this->token('code', $code);
             $token->escape = $flags[0] === '=';
             $token->buffer = '=' === $flags[0] || (isset($flags[1]) && '=' === $flags[1]);
 
@@ -536,29 +524,33 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanAttributes()
     {
         if ($this->input[0] === '(') {
             // cant use ^ anchor in the regex because the pattern is recursive
             // but this restriction is asserted by the if above
+            //$this->input = preg_replace('/([a-zA-Z0-9\'"\\]\\}\\)])([\t ]+[a-zA-Z])/', '$1,$2', $this->input);
             preg_match('/\((?:[^()]++|(?R))*+\)/', $this->input, $matches);
             $this->consume($matches[0]);
 
             $str = mb_substr($matches[0], 1, mb_strlen($matches[0]) - 2);
 
-            $token              = $this->token('attributes');
-            $token->attributes  = array();
-            $token->escaped     = array();
+            //$str = preg_replace('/()([a-zA-Z0-9_\\x7f-\\xff\\)\\]\\}"\'])(\s+[a-zA-Z_])/', '$1,$2', $str);
+
+            $token = $this->token('attributes');
+            $token->attributes = array();
+            $token->escaped = array();
             $token->selfClosing = false;
 
-            $key              = '';
-            $val              = '';
-            $quote            = '';
-            $states           = array('key');
+            $key = '';
+            $val = '';
+            $quote = '';
+            $states = array('key');
             $escapedAttribute = '';
-            $previousChar     = '';
+            $previousChar = '';
+            $previousNonBlankChar = '';
 
             $state = function () use (&$states) {
                 return $states[count($states) - 1];
@@ -567,22 +559,34 @@ class Lexer
             $interpolate = function ($attr) use (&$quote) {
                 // the global flag is turned on by default
                 // TODO: check the +, maybe it is better to use . here
-                return str_replace('\\#{', '#{', preg_replace('/(?<!\\\\)#{([^}]+)}/', $quote . ' + $1 + ' . $quote, $attr));
+                return str_replace('\\#{', '#{', preg_replace('/(?<!\\\\)#{([^}]+)}/', $quote . ' . $1 . ' . $quote, $attr));
             };
 
-            $parse = function ($char) use (&$key, &$val, &$quote, &$states, &$token, &$escapedAttribute, &$previousChar, $state, $interpolate) {
+            $parse = function ($char, $nextChar = '') use (&$key, &$val, &$quote, &$states, &$token, &$escapedAttribute, &$previousChar, &$previousNonBlankChar, $state, $interpolate) {
                 switch ($char) {
                     case ',':
                     case "\n":
+                    case "\t":
+                    case ' ':
                         switch ($state()) {
                             case 'expr':
                             case 'array':
                             case 'string':
                             case 'object':
-                                $val = $val . $char;
+                                $val .= $char;
                                 break;
 
                             default:
+                                if (
+                                    ($char === ' ' || $char === "\t") &&
+                                    (
+                                        !preg_match('/^[a-zA-Z0-9_\\x7f-\\xff"\'\\]\\)\\}]$/', $previousNonBlankChar) ||
+                                        !preg_match('/^[a-zA-Z0-9_]$/', $nextChar)
+                                    )
+                                ) {
+                                    $val .= $char;
+                                    break;
+                                }
                                 array_push($states, 'key');
                                 $val = trim($val);
                                 $key = trim($key);
@@ -591,12 +595,10 @@ class Lexer
                                     return;
                                 }
 
-                                $key                     = preg_replace(
-                                    array('/^[\'\"]|[\'\"]$/', '/\!/')
-                                    , ''
-                                    , $key
+                                $key = preg_replace(
+                                    array('/^[\'\"]|[\'\"]$/', '/\!/'), '', $key
                                 );
-                                $token->escaped[$key]    = $escapedAttribute;
+                                $token->escaped[$key] = $escapedAttribute;
                                 $token->attributes[$key] = ('' == $val) ? true : $interpolate($val);
 
                                 $key = '';
@@ -615,7 +617,7 @@ class Lexer
                             case 'array':
                             case 'string':
                             case 'object':
-                                $val = $val . $char;
+                                $val .= $char;
                                 break;
 
                             default:
@@ -628,42 +630,42 @@ class Lexer
                         if ($state() == 'val' || $state() == 'expr') {
                             array_push($states, 'expr');
                         }
-                        $val = $val . $char;
+                        $val .= $char;
                         break;
 
                     case ')':
                         if ($state() == 'val' || $state() == 'expr') {
                             array_pop($states);
                         }
-                        $val = $val . $char;
+                        $val .= $char;
                         break;
 
                     case '{':
                         if ($state() == 'val') {
                             array_push($states, 'object');
                         }
-                        $val = $val . $char;
+                        $val .= $char;
                         break;
 
                     case '}':
                         if ($state() == 'object') {
                             array_pop($states);
                         }
-                        $val = $val . $char;
+                        $val .= $char;
                         break;
 
                     case '[':
                         if ($state() == 'val') {
                             array_push($states, 'array');
                         }
-                        $val = $val . $char;
+                        $val .= $char;
                         break;
 
                     case ']':
                         if ($state() == 'array') {
                             array_pop($states);
                         }
-                        $val = $val . $char;
+                        $val .= $char;
                         break;
 
                     case '"':
@@ -681,12 +683,12 @@ class Lexer
                                 if ($char == $quote) {
                                     array_pop($states);
                                 }
-                                $val = $val . $char;
+                                $val .= $char;
                                 break;
 
                             default:
                                 array_push($states, 'string');
-                                $val   = $val . $char;
+                                $val = $val . $char;
                                 $quote = $char;
                                 break;
                         }
@@ -703,15 +705,18 @@ class Lexer
                                 break;
 
                             default:
-                                $val = $val . $char;
+                                $val .= $char;
                                 break;
                         }
                 }
                 $previousChar = $char;
+                if (trim($char) !== '') {
+                    $previousNonBlankChar = $char;
+                }
             };
 
             for ($i = 0; $i < mb_strlen($str); $i++) {
-                $parse(mb_substr($str, $i, 1));
+                $parse(mb_substr($str, $i, 1), mb_substr($str, $i + 1, 1));
             }
 
             $parse(',');
@@ -726,8 +731,9 @@ class Lexer
     }
 
     /**
-     * @return mixed|Object
      * @throws \Exception
+     *
+     * @return mixed|object
      */
     protected function scanIndent()
     {
@@ -785,7 +791,7 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanPipelessText()
     {
@@ -804,15 +810,23 @@ class Lexer
     }
 
     /**
-     * @return Object
+     * @return object
      */
     protected function scanColon()
     {
-        return $this->scan('/^: */', ':');
+        return $this->scan('/^:(?!:) */', ':');
     }
 
     /**
-     * @return bool|mixed|null|Object|void
+     * @return object
+     */
+    protected function scanAndAttributes()
+    {
+        return $this->scan('/^&attributes\(([^()]*(?:(?R)[^()]*)*+)\)/', '&attributes');
+    }
+
+    /**
+     * @return bool|mixed|null|object|void
      */
     public function nextToken()
     {
@@ -835,7 +849,6 @@ class Lexer
         or $r = $this->scanCall()
         or $r = $this->scanConditional()
         or $r = $this->scanEach()
-        or $r = $this->scanWhile()
         or $r = $this->scanAssignment()
         or $r = $this->scanTag()
         or $r = $this->scanFilter()
@@ -846,6 +859,7 @@ class Lexer
         or $r = $this->scanIndent()
         or $r = $this->scanComment()
         or $r = $this->scanColon()
+        or $r = $this->scanAndAttributes()
         or $r = $this->scanText();
 
         return $r;
