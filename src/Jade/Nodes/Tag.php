@@ -2,9 +2,9 @@
 
 namespace Jade\Nodes;
 
-class Tag extends Attributes {
-
-    protected static $inline_tags = array(
+class Tag extends Attributes
+{
+    protected static $inlineTags = array(
         'a',
         'abbr',
         'acronym',
@@ -23,54 +23,59 @@ class Tag extends Attributes {
         'span',
         'strong',
         'sub',
-        'sup'
+        'sup',
+    );
+    protected static $whiteSpacesTags = array(
+        'pre',
+        'script',
+        'textarea',
     );
     public $name;
     public $attributes;
     public $block;
     public $selfClosing = false;
 
-    public function __construct($name, $block=null)
+    public function __construct($name, $block = null)
     {
         $this->name = $name;
 
-        if ($block !== null)
-        {
-            $this->block = $block;
-        }
-        else
-        {
-            $this->block = new Block();
-        }
+        $this->block = ($block !== null)
+            ? $block
+            : new Block();
 
         $this->attributes = array();
     }
 
     public function isInline()
     {
-        return in_array($this->name, static::$inline_tags);
+        return in_array($this->name, static::$inlineTags);
+    }
+
+    public function keepWhiteSpaces()
+    {
+        return in_array($this->name, static::$whiteSpacesTags);
     }
 
     public function canInline()
     {
         $nodes = $this->block->nodes;
 
-        $isInline = function($node) use (&$isInline)
-        {
-            if ($node->isBlock) {
+        $isInline = function ($node) use (&$isInline) {
+            if (isset($node->isBlock) && $node->isBlock) {
                 foreach ($node->nodes as $n) {
                     if (!$isInline($n)) {
                         return false;
                     }
                 }
+
                 return true;
             }
 
-            if ($node->isText) {
+            if (isset($node->isText) && $node->isText) {
                 return true;
             }
 
-            if (isset($node->isInline) && $node->isInline()) {
+            if (method_exists($node, 'isInline') && $node->isInline()) {
                 return true;
             }
 
@@ -96,11 +101,12 @@ class Tag extends Attributes {
         if ($ret) {
             $prev = null;
             foreach ($nodes as $k => $n) {
-                if ($prev !== null && $nodes[$prev]->isText && $n->isText) {
+                if ($prev !== null && isset($nodes[$prev]->isText) && $nodes[$prev]->isText && isset($n->isText) && $n->isText) {
                     return false;
                 }
                 $prev = $k;
             }
+
             return true;
         }
 

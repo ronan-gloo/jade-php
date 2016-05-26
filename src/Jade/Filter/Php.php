@@ -6,31 +6,30 @@ use Jade\Compiler;
 use Jade\Nodes\Filter;
 
 /**
- * Class Php
- * @package Jade\Filter
+ * Class Jade\Filter\Php.
  */
-class Php implements FilterInterface {
-
+class Php implements FilterInterface
+{
     /**
-     * @param Filter $node
+     * @param Filter   $node
      * @param Compiler $compiler
+     *
      * @return string
      */
     public function __invoke(Filter $node, Compiler $compiler)
     {
         $data = '';
 
-        foreach ($node->block->nodes as $n)
-        {
-            if (preg_match('/^[[:space:]]*\|(.*)/', $n->value, $m))
-            {
-                $data = $m[1];
+        foreach ($node->block->nodes as $n) {
+            if (isset($n->value)) {
+                $data .= preg_match('/^[[:space:]]*\|(?!\|)(.*)/', $n->value, $m)
+                    ? ' ?> ' . $m[1] . '<?php '
+                    : $n->value . "\n";
+                continue;
             }
-            else
-            {
-                $data .= $n->value . "\n";
-            }
+            $data .= ' ?> ' . $compiler->subCompiler()->compile($n) . '<?php ';
         }
-        return $data ? '<?php ' . $data . ' ?>' : $data;
+
+        return $data ? '<?php ' . $data . ' ?> ' : $data;
     }
 }
