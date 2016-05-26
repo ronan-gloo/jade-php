@@ -48,25 +48,25 @@ abstract class AttributesCompiler extends CompilerFacade
 
         return $this->createCode(
             '$__attributes = ' . $this->getValueStatement($statements) . ';' .
-            'if (!empty($__attributes["class"])) { ' .
-                '$__classes = (empty($__classes) ? "" : $__classes . " ") . ' .
-                '(is_array($__attributes["class"]) ? implode(" ", $__attributes["class"]) : $__attributes["class"]) . ' .
-                $addClasses . '; ' .
-                'unset($__attributes["class"]); ' .
+            'if (is_array($__attributes)) { ' .
+                '$__attributes["class"] = trim(' .
+                    '$__classes = (empty($__classes) ? "" : $__classes . " ") . ' .
+                    '(isset($__attributes["class"]) ? (is_array($__attributes["class"]) ? implode(" ", $__attributes["class"]) : $__attributes["class"]) : "") . ' .
+                    $addClasses .
+                '); ' .
+                'if (empty($__attributes["class"])) { ' .
+                    'unset($__attributes["class"]); ' .
+                '} ' .
             '} ' .
             '\\Jade\\Compiler::displayAttributes($__attributes, ' . var_export($this->quote, true) . ');');
     }
 
     protected function getClassAttribute($value, &$classesCheck)
     {
-        if ($this->keepNullAttributes) {
-            return $this->createCode('echo (is_array($_a = %1$s)) ? implode(" ", $_a) : $_a', $value);
-        }
-
         $statements = $this->createStatements($value);
         $classesCheck[] = '(is_array($_a = ' . $statements[0][0] . ') ? implode(" ", $_a) : $_a)';
 
-        return 'null';
+        return $this->keepNullAttributes ? '' : 'null';
     }
 
     protected function getUnescapedValueCode($value, &$valueCheck)
@@ -140,24 +140,24 @@ abstract class AttributesCompiler extends CompilerFacade
 
     protected function getClassesCode(&$classes, &$classesCheck)
     {
-        return $this->createCode(
+        return trim($this->createCode(
             '$__classes = implode(" ", ' .
                 'array_unique(explode(" ", (empty($__classes) ? "" : $__classes) . ' .
                     var_export(implode(' ', $classes), true) . ' . ' .
                     'implode(" ", array(' . implode(', ', $classesCheck) . ')) ' .
                 ')) ' .
-            '); echo $__classes;'
-        );
+            ');'
+        ));
     }
 
     protected function getClassesDisplayCode()
     {
-        return $this->createCode(
+        return trim($this->createCode(
             'if (!empty($__classes)) { ' .
                 '?> class=' . $this->quote . '<?php echo $__classes; ?>' . $this->quote . '<?php ' .
             '} ' .
             'unset($__classes); '
-        );
+        ));
     }
 
     /**
@@ -174,6 +174,11 @@ abstract class AttributesCompiler extends CompilerFacade
         }
 
         $items .= $this->getClassesCode($classes, $classesCheck);
+        $items = trim($items);
+
+        if (empty($items)) {
+            return;
+        }
 
         $this->buffer(' ' . trim($items), false);
     }

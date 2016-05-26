@@ -132,6 +132,8 @@ function get_test_result($name, $verbose = false, $moreVerbose = false) {
     }
     $expectedHtml = preg_replace_callback('`class\s*=\s*(["\'])([^"\']+)\\1`', 'orderWords', $expectedHtml);
     $actualHtml = preg_replace_callback('`class\s*=\s*(["\'])([^"\']+)\\1`', 'orderWords', $actualHtml);
+    $expectedHtml = preg_replace('`(?<=[\'"])\s(?=>)|(?<=[a-zA-Z0-9:])\s(?=(>|\s[a-zA-Z0-9:]))`', '', $expectedHtml);
+    $actualHtml = preg_replace('`(?<=[\'"])\s(?=>)|(?<=[a-zA-Z0-9:])\s(?=(>|\s[a-zA-Z0-9:]))`', '', $actualHtml);
     $minifiedExpectedHtml = str_replace($from, $to, trim($expectedHtml));
     $minifiedActualHtml = str_replace($from, $to, trim($actualHtml));
     $result = array($name, $minifiedExpectedHtml, $minifiedActualHtml);

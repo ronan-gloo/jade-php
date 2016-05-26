@@ -119,7 +119,7 @@ abstract class CompilerFacade extends CompilerUtils
     {
         if (is_array($attributes) || $attributes instanceof Traversable) {
             foreach ($attributes as $key => $value) {
-                if ($value !== false && $value !== 'null') {
+                if ($key !== 'class' && $value !== false && $value !== 'null') {
                     echo ' ' . $key . '=' . $quote . htmlspecialchars($value) . $quote;
                 }
             }
