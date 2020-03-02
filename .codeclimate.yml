@@ -1,0 +1,29 @@
+---
+plugins:
+  duplication:
+    enabled: true
+    config:
+      languages:
+        php:
+          mass_threshold: 36
+  fixme:
+    enabled: true
+  phpmd:
+    enabled: true
+    checks:
+      # Allow static access such as CommonUtils ones
+      CleanCode/StaticAccess:
+        enabled: false
+      UnusedFormalParameter:
+        enabled: false
+  phpcodesniffer:
+    enabled: true
+  phpmd:
+    enabled: true
+  SonarPHP:
+    enabled: true
+  phan:
+    enabled: true
+version: "2"
+exclude_patterns:
+- "tests/"
